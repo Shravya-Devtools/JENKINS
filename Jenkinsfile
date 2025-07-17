@@ -20,6 +20,13 @@ pipeline {
                     echo "Audit Exit Code: $?"
                 '''
             }
+	stage('OWASP Dependency Check') {
+            steps {
+                dependencyCheck additionalArguments: '''--scan \\\'./\\\'
+                  --out \\\'./\\\'
+                  --format \\\'ALL\\\' 
+                  --prettyPrint''', odcInstallation: 'OWASP-DepCheck-10'
+	    }
         }
     }
 }
