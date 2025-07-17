@@ -17,24 +17,22 @@ pipeline {
                 stage('NPM Dependency Audit') {
                     steps {
                         sh '''
-                            echo "Running npm audit..."
                             npm audit --audit-level=critical
-                            echo "Audit Exit Code: $?"
+                            echo $?
                         '''
                     }
                 }
 
                 stage('OWASP Dependency Check') {
                     steps {
-                        dependencyCheck additionalArguments: '''--scan './' \
-                            --out './' \
-                            --format ALL \
-                            --prettyPrint''', 
-                        odcInstallation: 'OWASP-DepCheck-10'
+                        dependencyCheck additionalArguments: '''
+			    --scan \'./\' 
+                            --out  \'./\'
+                            --format \'ALL\'
+                            --prettyPrint''', odcInstallation: 'OWASP-DepCheck-10'
                     }
                 }
             }
         }
     }
 }
-
