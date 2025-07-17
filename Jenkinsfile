@@ -1,16 +1,14 @@
 pipeline {
     agent any
-    
+
     tools {
-        nodejs 'nodejs-22-6-0'
+        nodejs 'nodejs-22-6-0' // Ensure this matches the name in Jenkins global tool config
     }
 
     stages {
-        stage('VM Node Version') {
+        stage('Installing Dependencies') {
             steps {
-                echo 'Checking Node.js and npm versions on the Jenkins agent...'
-                sh 'node -v'
-                sh 'npm -v'
+                sh 'npm install --no-audit'
             }
         }
     }
