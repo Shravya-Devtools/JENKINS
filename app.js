@@ -4,9 +4,9 @@ const express = require('express');
 const OS = require('os');
 const bodyParser = require('body-parser');
 const mongoose = require("mongoose");
-const app = express();
 const cors = require('cors');
-const serverless = require('serverless-http');
+
+const app = express();
 
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, '/')));
@@ -29,9 +29,9 @@ mongoose.connect(mongoUri, {
     }
 });
 
-var Schema = mongoose.Schema;
+const Schema = mongoose.Schema;
 
-var dataSchema = new Schema({
+const dataSchema = new Schema({
     name: String,
     id: Number,
     description: String,
@@ -39,19 +39,20 @@ var dataSchema = new Schema({
     velocity: String,
     distance: String
 });
-var planetModel = mongoose.model('planets', dataSchema);
+
+const planetModel = mongoose.model('planets', dataSchema);
 
 app.post('/planet', function(req, res) {
-    planetModel.findOne({
-        id: req.body.id
-    }, function(err, planetData) {
+    planetModel.findOne({ id: req.body.id }, function(err, planetData) {
         if (err) {
-            // alert() is browser-only; in Node use console.error or send a response instead
-            console.error("Ooops, We only have 9 planets and a sun. Select a number from 0 - 9");
-            res.status(400).send("Error in Planet Data");
-        } else {
-            res.send(planetData);
+            console.error("Error fetching planet data:", err);
+            return res.status(500).send("Internal server error");
         }
+        if (!planetData) {
+            console.error("Ooops, We only have 9 planets and a sun. Select a number from 0 - 9");
+            return res.status(400).send("Error: Invalid planet ID");
+        }
+        res.send(planetData);
     });
 });
 
@@ -63,40 +64,35 @@ app.get('/api-docs', (req, res) => {
     fs.readFile('oas.json', 'utf8', (err, data) => {
         if (err) {
             console.error('Error reading file:', err);
-            res.status(500).send('Error reading file');
-        } else {
-            res.json(JSON.parse(data));
+            return res.status(500).send('Error reading file');
         }
+        res.json(JSON.parse(data));
     });
 });
 
-app.get('/os', function(req, res) {
+app.get('/os', (req, res) => {
     res.setHeader('Content-Type', 'application/json');
     res.send({
-        "os": OS.hostname(),
-        "env": process.env.NODE_ENV
+        os: OS.hostname(),
+        env: process.env.NODE_ENV || 'development'
     });
 });
 
-app.get('/live', function(req, res) {
+app.get('/live', (req, res) => {
     res.setHeader('Content-Type', 'application/json');
-    res.send({
-        "status": "live"
-    });
+    res.send({ status: "live" });
 });
 
-app.get('/ready', function(req, res) {
+app.get('/ready', (req, res) => {
     res.setHeader('Content-Type', 'application/json');
-    res.send({
-        "status": "ready"
-    });
+    res.send({ status: "ready" });
 });
 
-app.listen(3000, () => { 
-    console.log("Server successfully running on port - " + 3000); 
+app.listen(3000, () => {
+    console.log("Server successfully running on port - 3000");
 });
 
 module.exports = app;
 
-//module.exports.handler = serverless(app);
+// module.exports.handler = serverless(app);
 
