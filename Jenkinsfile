@@ -4,6 +4,9 @@ pipeline {
     tools {
         nodejs 'nodejs-22-6-0' // Ensure this matches the name in Jenkins global tool config
     }
+    environment {
+        MONGO_URI = "mongodb+srv://supercluster.d83jj.mongodb.net/superData"
+   }
 
     stages {
         stage('Installing Dependencies') {
@@ -42,9 +45,12 @@ pipeline {
 
         stage('Unit Testing') {
             steps {
-                sh 'npm test'
-            }
-        }
+		withCredentials([usernamePassword(credentialsId: 'mongo-db-credentials', passwordVariable: 'MONGO_PASSWORD', usernameVariable: 'MONGO_USERNAME')]) {
+                    sh 'npm test'
+	   	}
+		 junit allowEmptyResults: true, testResults: 'test-results.xml'
+	   }
+       }
     }
 }
 
