@@ -12,7 +12,7 @@ pipeline {
             }
         }
 
-        stage('NPM Dependency Scanning') {
+        stage('Dependency Scanning') {
             parallel {
                 stage('NPM Dependency Audit') {
                     steps {
