@@ -4,10 +4,9 @@ pipeline {
     tools {
         nodejs 'nodejs-22-6-0'  // make sure this matches your Jenkins config
     }
-    
-    environment {
-        MONGO_URI = "mongodb+srv://supercluster.d83jj.mongodb.net/superData"
-    }
+
+    // Remove incomplete MONGO_URI from global environment
+    // We'll set it dynamically with creds below
 
     stages {
         stage('Installing Dependencies') {
@@ -46,10 +45,9 @@ pipeline {
         stage('Unit Testing') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'mongo-db-credentials', passwordVariable: 'MONGO_PASSWORD', usernameVariable: 'MONGO_USERNAME')]) {
-                    // Export credentials as environment variables for the npm test command
                     sh '''
-                        export MONGO_USERNAME=$MONGO_USERNAME
-                        export MONGO_PASSWORD=$MONGO_PASSWORD
+                        export MONGO_URI="mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@supercluster.d83jj.mongodb.net/superData?retryWrites=true&w=majority"
+                        echo "Using Mongo URI: $MONGO_URI"
                         npm test
                     '''
                 }
