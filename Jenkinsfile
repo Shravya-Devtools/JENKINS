@@ -2,11 +2,8 @@ pipeline {
     agent any
 
     tools {
-        nodejs 'nodejs-22-6-0'  // make sure this matches your Jenkins config
+        nodejs 'nodejs-22-6-0'  // Adjust this as per your Jenkins config
     }
-
-    // Remove incomplete MONGO_URI from global environment
-    // We'll set it dynamically with creds below
 
     stages {
         stage('Installing Dependencies') {
@@ -28,15 +25,15 @@ pipeline {
                 stage('OWASP Dependency Check') {
                     steps {
                         dependencyCheck additionalArguments: '''
-                            --scan \'./\'
-                            --out  \'./\'
-                            --format \'ALL\'
+                            --scan './'
+                            --out  './'
+                            --format 'ALL'
                             --prettyPrint''', odcInstallation: 'OWASP-DepCheck-10'
                         dependencyCheckPublisher failedTotalCritical: 1, pattern: 'dependency-check-report.xml', stopBuild: true
 
                         junit allowEmptyResults: true, testResults: 'dependency-check-junit.xml'
 
-                        publishHTML([allowMissing: true, alwaysLinkToLastBuild: true, icon: '', keepAll: true, reportDir: './', reportFiles: 'dependency-check-jenkins.html', reportName: 'Dependency Check HTML Report', reportTitles: '', useWrapperFileDirectly: true])
+                        publishHTML([allowMissing: true, alwaysLinkToLastBuild: true, icon: '', keepAll: true, reportDir: './', reportFiles: 'dependency-check-jenkins.html', reportName: 'Dependency Check HTML Report', useWrapperFileDirectly: true])
                     }
                 }
             }
@@ -44,6 +41,7 @@ pipeline {
 
         stage('Unit Testing') {
             steps {
+                // Inject username/password and create MONGO_URI dynamically
                 withCredentials([usernamePassword(credentialsId: 'mongo-db-credentials', passwordVariable: 'MONGO_PASSWORD', usernameVariable: 'MONGO_USERNAME')]) {
                     sh '''
                         export MONGO_URI="mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@supercluster.d83jj.mongodb.net/superData?retryWrites=true&w=majority"
