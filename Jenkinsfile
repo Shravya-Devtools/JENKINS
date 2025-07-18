@@ -11,7 +11,8 @@ pipeline {
     }
     stages {
         stage('Installing Dependencies') {
-            steps {
+            options { timestamps() }
+	    steps {
                 sh 'npm install --no-audit'
             }
         }
@@ -49,5 +50,20 @@ pipeline {
                 junit allowEmptyResults: true, stdioRetention: '', testResults: 'test-results.xml'
             }
         }
+	    stage('code coverage') {
+            steps {
+                catchError(buildResult: 'SUCCESS', message: 'Oops! it will be fixed in the future releases', stageResult: 'UNSTABLE') {
+                    sh 'npm run coverage'
+                }
+                //publishHTML([allowMissing: true, alwaysLinkToLastBuild: true, keepAll: true,
+                            // reportDir: 'coverage/lcov-report',
+                           //  reportFiles: 'index.html',
+                           //  reportName: 'Code Coverage HTML Report',
+                           //  reportTitles: '',
+                            // useWrapperFileDirectly: true])
+            }
+        }
     }
 }
+    
+
