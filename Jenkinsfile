@@ -2,11 +2,12 @@ pipeline {
     agent any
 
     tools {
-        nodejs 'nodejs-22-6-0' // Ensure this matches the name in Jenkins global tool config
+        nodejs 'nodejs-22-6-0'  // make sure this matches your Jenkins config
     }
+    
     environment {
         MONGO_URI = "mongodb+srv://supercluster.d83jj.mongodb.net/superData"
-   }
+    }
 
     stages {
         stage('Installing Dependencies') {
@@ -25,7 +26,6 @@ pipeline {
                         '''
                     }
                 }
-
                 stage('OWASP Dependency Check') {
                     steps {
                         dependencyCheck additionalArguments: '''
@@ -45,12 +45,17 @@ pipeline {
 
         stage('Unit Testing') {
             steps {
-		withCredentials([usernamePassword(credentialsId: 'mongo-db-credentials', passwordVariable: 'MONGO_PASSWORD', usernameVariable: 'MONGO_USERNAME')]) {
-                    sh 'npm test'
-	   	}
-		 junit allowEmptyResults: true, testResults: 'test-results.xml'
-	   }
-       }
+                withCredentials([usernamePassword(credentialsId: 'mongo-db-credentials', passwordVariable: 'MONGO_PASSWORD', usernameVariable: 'MONGO_USERNAME')]) {
+                    // Export credentials as environment variables for the npm test command
+                    sh '''
+                        export MONGO_USERNAME=$MONGO_USERNAME
+                        export MONGO_PASSWORD=$MONGO_PASSWORD
+                        npm test
+                    '''
+                }
+                junit allowEmptyResults: true, testResults: 'test-results.xml'
+            }
+        }
     }
 }
 
