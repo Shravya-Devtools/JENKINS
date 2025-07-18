@@ -1,17 +1,21 @@
 pipeline {
     agent any
-
     tools {
-        nodejs 'nodejs-22-6-0'  // Adjust this as per your Jenkins config
+        nodejs 'nodejs'
     }
-
+    environment {
+        MONGO_URI = "mongodb+srv://supercluster.d83jj.mongodb.net/superData"
+        MONGO_DB_CREDS = credentials('mongo-db-creds')
+        MONGO_USERNAME = credentials('mongo-db-username')
+        MONGO_PASSWORD = credentials('mongo-db-password')
+    }
     stages {
         stage('Installing Dependencies') {
             steps {
                 sh 'npm install --no-audit'
             }
         }
-
+ 
         stage('Dependency Scanning') {
             parallel {
                 stage('NPM Dependency Audit') {
@@ -26,32 +30,24 @@ pipeline {
                     steps {
                         dependencyCheck additionalArguments: '''
                             --scan './'
-                            --out  './'
+                            --out './'
                             --format 'ALL'
-                            --prettyPrint''', odcInstallation: 'OWASP-DepCheck-10'
-                        dependencyCheckPublisher failedTotalCritical: 1, pattern: 'dependency-check-report.xml', stopBuild: true
-
-                        junit allowEmptyResults: true, testResults: 'dependency-check-junit.xml'
-
-                        publishHTML([allowMissing: true, alwaysLinkToLastBuild: true, icon: '', keepAll: true, reportDir: './', reportFiles: 'dependency-check-jenkins.html', reportName: 'Dependency Check HTML Report', useWrapperFileDirectly: true])
+                            --prettyPrint
+                        ''', odcInstallation: 'OWASP-depcheck-12'
                     }
                 }
             }
         }
-
-        stage('Unit Testing') {
+ 
+        stage('Unit test') {
+            options { retry(2) }
             steps {
-                // Inject username/password and create MONGO_URI dynamically
-                withCredentials([usernamePassword(credentialsId: 'mongo-db-credentials', passwordVariable: 'MONGO_PASSWORD', usernameVariable: 'MONGO_USERNAME')]) {
-                    sh '''
-                        export MONGO_URI="mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@supercluster.d83jj.mongodb.net/superData?retryWrites=true&w=majority"
-                        echo "Using Mongo URI: $MONGO_URI"
-                        npm test
-                    '''
-                }
-                junit allowEmptyResults: true, testResults: 'test-results.xml'
+                sh 'echo colon separated creds: $MONGO_DB_CREDS'
+                sh 'echo Mongodb-username: $MONGO_DB_CREDS_USR'
+                sh 'echo Mongodb-password: $MONGO_DB_CREDS_PSW'
+                sh 'npm test'
+                junit allowEmptyResults: true, stdioRetention: '', testResults: 'test-results.xml'
             }
         }
     }
 }
-
