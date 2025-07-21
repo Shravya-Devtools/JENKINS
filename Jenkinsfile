@@ -18,6 +18,7 @@ pipeline {
             }
         }
 
+
         stage('Dependency Scanning') {
             parallel {
                 stage('NPM Dependency Audit') {
