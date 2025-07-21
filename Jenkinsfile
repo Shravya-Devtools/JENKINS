@@ -12,11 +12,11 @@ pipeline {
     stages {
         stage('Installing Dependencies') {
             options { timestamps() }
-	    steps {
+            steps {
                 sh 'npm install --no-audit'
             }
         }
- 
+
         stage('Dependency Scanning') {
             parallel {
                 stage('NPM Dependency Audit') {
@@ -39,7 +39,7 @@ pipeline {
                 }
             }
         }
- 
+
         stage('Unit test') {
             options { retry(2) }
             steps {
@@ -49,7 +49,8 @@ pipeline {
                 sh 'npm test'
             }
         }
-	    stage('code coverage') {
+
+        stage('code coverage') {
             steps {
                 catchError(buildResult: 'SUCCESS', message: 'Oops! it will be fixed in the future releases', stageResult: 'UNSTABLE') {
                     sh 'npm run coverage'
@@ -57,20 +58,18 @@ pipeline {
             }
         }
     }
-}
-    
-post {
-  always {
-      junit allowEmptyResults: true, stdioRetention: '', testResults: 'test-results.xml'
 
-      publishHTML([allowMissing: true, alwaysLinkToLastBuild: true, keepAll: true,
-                             reportDir: 'coverage/lcov-report',
-                             reportFiles: 'index.html',
-                             reportName: 'Code Coverage HTML Report',
-                             reportTitles: '',
-                             useWrapperFileDirectly: true])
-            }
+    post {
+        always {
+            junit allowEmptyResults: true, stdioRetention: '', testResults: 'test-results.xml'
 
-  }
+            publishHTML([allowMissing: true, alwaysLinkToLastBuild: true, keepAll: true,
+                         reportDir: 'coverage/lcov-report',
+                         reportFiles: 'index.html',
+                         reportName: 'Code Coverage HTML Report',
+                         reportTitles: '',
+                         useWrapperFileDirectly: true])
+        }
+    }
 }
 
