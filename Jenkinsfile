@@ -67,6 +67,7 @@ pipeline {
                         -Dsonar.projectKey=Solar-System-Project \
                         -Dsonar.sources=app.js \
                         -Dsonar.host.url=http://20.64.244.27:9000 \
+			-Dsonar.javascript.lcov.reportPaths=./coverage/lcov.info \
                         -Dsonar.token=sqp_db889c8ef8cdaefc42c7a0ce172de2d7c5c68e83
                 '''
             }
