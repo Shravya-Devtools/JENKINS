@@ -7,9 +7,6 @@ pipeline {
 
     environment {
         MONGO_URI = "mongodb+srv://supercluster.d83jj.mongodb.net/superData"
-        MONGO_DB_CREDENTIALS = credentials('mongo-db-credentials')
-        MONGO_USERNAME = credentials('mongo-db-username')
-        MONGO_PASSWORD = credentials('mongo-db-password')
         SONAR_SCANNER_HOME = tool 'sonarqube-scanner-610'
     }
 
@@ -31,12 +28,13 @@ pipeline {
                         }
                     }
                 }
+
                 stage('OWASP Dependency Check') {
                     steps {
                         dependencyCheck additionalArguments: '''
-                            --scan './'
-                            --out './'
-                            --format 'ALL'
+                            --scan './' \
+                            --out './' \
+                            --format 'ALL' \
                             --disableYarnAudit \
                             --prettyPrint
                         ''', odcInstallation: 'OWASP-DepCheck-10'
@@ -45,17 +43,23 @@ pipeline {
             }
         }
 
-        stage('Unit test') {
+        stage('Unit Test') {
             options { retry(2) }
+            environment {
+                // Inject credentials into environment variables
+                MONGO_DB_CREDENTIALS = credentials('mongo-db-credentials')
+                MONGO_USERNAME = credentials('mongo-db-username')
+                MONGO_PASSWORD = credentials('mongo-db-password')
+            }
             steps {
-                sh 'echo colon separated creds: $MONGO_DB_CREDENTIALS'
-                sh 'echo Mongodb-username: $MONGO_USERNAME'
-                sh 'echo Mongodb-password: $MONGO_PASSWORD'
+                sh 'echo MONGODB URI: $MONGO_URI'
+                sh 'echo MONGODB Username: $MONGO_USERNAME'
+                sh 'echo MONGODB Password: $MONGO_PASSWORD'
                 sh 'npm test -- --reporter mocha-junit-reporter --reporter-options mochaFile=test-results.xml'
             }
         }
 
-        stage('Code coverage') {
+        stage('Code Coverage') {
             steps {
                 catchError(buildResult: 'SUCCESS', message: 'Oops! it will be fixed in the future releases', stageResult: 'UNSTABLE') {
                     sh 'npm run coverage'
@@ -67,20 +71,24 @@ pipeline {
             steps {
                 timeout(time: 5, unit: 'MINUTES') {
                     withSonarQubeEnv('sonar-qube-server') {
-                        sh 'echo $SONAR_SCANNER_HOME'
+                        sh 'echo Using Sonar Scanner at: $SONAR_SCANNER_HOME'
+
                         sh """
                             $SONAR_SCANNER_HOME/bin/sonar-scanner \
                                 -Dsonar.projectKey=Solar-System-Project \
-                                -Dsonar.sources=app.js \
-                                -Dsonar.javascript.lcov.reportPaths=./coverage/lcov.info
+                                -Dsonar.sources=. \
+                                -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
+                                -Dsonar.ws.timeout=180 \
+                                -Dsonar.verbose=true
                         """
                     }
-                    waitForQualityGate abortPipeline: true
                 }
+
+                waitForQualityGate abortPipeline: true
             }
         }
 
-        stage('Build Docker image') {
+        stage('Build Docker Image') {
             steps {
                 sh 'printenv'
                 sh 'docker build -t shravya2315/solar-system:$GIT_COMMIT .'
@@ -90,8 +98,10 @@ pipeline {
 
     post {
         always {
+            // Always publish test results even if the build fails
             junit allowEmptyResults: true, testResults: 'test-results.xml'
 
+            // Publish code coverage report if available
             publishHTML([
                 allowMissing: true,
                 alwaysLinkToLastBuild: true,
@@ -99,7 +109,6 @@ pipeline {
                 reportDir: 'coverage/lcov-report',
                 reportFiles: 'index.html',
                 reportName: 'Code Coverage HTML Report',
-                reportTitles: '',
                 useWrapperFileDirectly: true
             ])
         }
