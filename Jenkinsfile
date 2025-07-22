@@ -1,3 +1,4 @@
+
 pipeline {
     agent any
     tools {
@@ -18,15 +19,13 @@ pipeline {
             }
         }
 
-
         stage('Dependency Scanning') {
             parallel {
                 stage('NPM Dependency Audit') {
                     steps {
-                        sh '''
-                            npm audit --audit-level=critical
-                            echo $?
-                        '''
+                        catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+                            sh 'npm audit --audit-level=critical'
+                        }
                     }
                 }
                 stage('OWASP Dependency Check') {
@@ -35,7 +34,7 @@ pipeline {
                             --scan './'
                             --out './'
                             --format 'ALL'
-			    --disableYarnAudit \
+                            --disableYarnAudit \
                             --prettyPrint
                         ''', odcInstallation: 'OWASP-DepCheck-10'
                     }
@@ -46,9 +45,9 @@ pipeline {
         stage('Unit test') {
             options { retry(2) }
             steps {
-                sh 'echo colon separated creds: $MONGO_DB_CREDS'
-                sh 'echo Mongodb-username: $MONGO_DB_CREDS_USR'
-                sh 'echo Mongodb-password: $MONGO_DB_CREDS_PSW'
+                sh 'echo colon separated creds: $MONGO_DB_CREDENTIALS'
+                sh 'echo Mongodb-username: $MONGO_USERNAME'
+                sh 'echo Mongodb-password: $MONGO_PASSWORD'
                 sh 'npm test'
             }
         }
@@ -63,26 +62,26 @@ pipeline {
 
         stage('SAST -Sonarqube') {
             steps {
-		timeout(time: 60, unit: 'SECONDS') {
-			withSonarQubeEnv('sonar-qube-server') {
-                    	    sh 'echo $SONAR_SCANNER_HOME'
-                            sh '''
-                    		$SONAR_SCANNER_HOME/bin/sonar-scanner \
-                        		-Dsonar.projectKey=Solar-System-Project \
-                        		-Dsonar.sources=app.js \
-					-Dsonar.javascript.lcov.reportPaths=./coverage/lcov.info \
-                    	   '''
-			}
-	     		waitForQualityGate abortPipeline: true
-		}
+                timeout(time: 60, unit: 'SECONDS') {
+                    withSonarQubeEnv('sonar-qube-server') {
+                        sh 'echo $SONAR_SCANNER_HOME'
+                        sh '''
+                            $SONAR_SCANNER_HOME/bin/sonar-scanner \
+                                    -Dsonar.projectKey=Solar-System-Project \
+                                    -Dsonar.sources=app.js \
+                                    -Dsonar.javascript.lcov.reportPaths=./coverage/lcov.info \
+                       '''
+                    }
+                    waitForQualityGate abortPipeline: true
+                }
             }
         }
-	stage('Build Docker image') {
-	    steps {
-		sh  'printenv'
-		sh  'docker build -t shravya2315/solar-system:$GIT_COMMIT .'
-	    }
-	}
+        stage('Build Docker image') {
+            steps {
+                sh  'printenv'
+                sh  'docker build -t shravya2315/solar-system:$GIT_COMMIT .'
+            }
+        }
     }
 
     post {
