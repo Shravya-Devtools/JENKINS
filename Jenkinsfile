@@ -77,6 +77,12 @@ pipeline {
 		}
             }
         }
+	stage('Build Docker image') {
+	    steps {
+		sh  'printenv'
+		sh  'docker build -t shravya2315/solar-system:$GIT_COMMIT .'
+	    }
+	}
     }
 
     post {
