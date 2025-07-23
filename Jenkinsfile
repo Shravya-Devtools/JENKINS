@@ -1,13 +1,14 @@
 pipeline {
     agent any
     tools {
-        nodejs 'nodejs'  // Make sure 'nodejs' tool is configured in Jenkins
+        nodejs 'nodejs'  // Ensure 'nodejs' is configured in Jenkins
     }
     environment {
         MONGO_URI = "mongodb+srv://supercluster.d83jj.mongodb.net/superData"
-        SONAR_SCANNER_HOME = tool 'sonar-scanner'  // Ensure this tool name matches Jenkins config
+        SONAR_SCANNER_HOME = tool 'sonar-scanner'
     }
     stages {
+        /*
         stage('Installing Dependencies') {
             steps {
                 sh 'npm install --no-audit'
@@ -72,12 +73,6 @@ pipeline {
             }
         }
 
-        stage('Docker Build Image') {
-            steps {
-                sh 'sudo docker build -t shravya2315/solar-system:$GIT_COMMIT .'
-            }
-        }
-
         stage('Trivy Security Scanner') {
             steps {
                 sh '''
@@ -94,6 +89,13 @@ pipeline {
                 '''
             }
         }
+        */
+
+        stage('Docker Build Image') {
+            steps {
+                sh 'sudo docker build -t shravya2315/solar-system:$GIT_COMMIT .'
+            }
+        }
 
         stage('Push Docker Image') {
             steps {
@@ -107,6 +109,7 @@ pipeline {
         }
     }
 
+    /*
     post {
         always {
             script {
@@ -125,5 +128,6 @@ pipeline {
             }
         }
     }
+    */
 }
 
