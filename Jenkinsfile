@@ -5,8 +5,7 @@ pipeline {
     }
     environment {
         MONGO_URI = "mongodb+srv://supercluster.d83jj.mongodb.net/superData"
-        // Change 'sonarqube-scanner610' to the exact tool name configured in Jenkins
-        SONAR_SCANNER_HOME = tool 'sonar-scanner'  
+        SONAR_SCANNER_HOME = tool 'sonar-scanner'  // Ensure this tool name matches Jenkins config
     }
     stages {
         stage('Installing Dependencies') {
@@ -110,18 +109,19 @@ pipeline {
 
     post {
         always {
-            // Wrap publishHTML and junit inside node block for workspace access
-            node {
-                publishHTML([
-                    allowMissing: true,
-                    alwaysLinkToLastBuild: true,
-                    keepAll: true,
-                    reportDir: 'coverage/lcov-report',
-                    reportFiles: 'index.html',
-                    reportName: 'Code Coverage HTML Report',
-                    useWrapperFileDirectly: true
-                ])
-                junit allowEmptyResults: true, testResults: 'test-results.xml'
+            script {
+                node('') {
+                    publishHTML([
+                        allowMissing: true,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: 'coverage/lcov-report',
+                        reportFiles: 'index.html',
+                        reportName: 'Code Coverage HTML Report',
+                        useWrapperFileDirectly: true
+                    ])
+                    junit allowEmptyResults: true, testResults: 'test-results.xml'
+                }
             }
         }
     }
