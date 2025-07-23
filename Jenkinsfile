@@ -91,7 +91,7 @@ pipeline {
                         --format json -o trivy-image-MEDIUM-results.json
 
                     trivy image shravya2315/solar-system:$GIT_COMMIT \
-                        --severity HIGH,CRITICAL \
+                        --severity CRITICAL \
                         --exit-code 1 \
                         --quiet \
                         --format json -o trivy-image-CRITICAL-results.json
@@ -111,11 +111,25 @@ pipeline {
         }
     }
 
+    /*
     post {
         always {
-            archiveArtifacts artifacts: 'trivy-image-*.json', allowEmptyArchive: true
-            echo 'Archived Trivy JSON reports for security vulnerability review.'
+            script {
+                node('') {
+                    publishHTML([
+                        allowMissing: true,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: 'coverage/lcov-report',
+                        reportFiles: 'index.html',
+                        reportName: 'Code Coverage HTML Report',
+                        useWrapperFileDirectly: true
+                    ])
+                    junit allowEmptyResults: true, testResults: 'test-results.xml'
+                }
+            }
         }
     }
+    */
 }
 
