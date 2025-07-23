@@ -67,21 +67,22 @@ pipeline {
 
         stage('SAST - SonarQube') {
             steps {
-                timeout(time: 5, unit: 'MINUTES') {
+                timeout(time: 15, unit: 'MINUTES') {
                     withSonarQubeEnv('sonar-qube-server') {
-                        sh 'echo Using Sonar Scanner at: $SONAR_SCANNER_HOME'
-                        sh """
-                            $SONAR_SCANNER_HOME/bin/sonar-scanner \
-                                -Dsonar.projectKey=Solar-System-Project \
-                                -Dsonar.sources=. \
-                                -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
-                                -Dsonar.ws.timeout=180 \
-                                -Dsonar.verbose=true
-                        """
-                        // ✅ Now inside timeout block
-                        waitForQualityGate abortPipeline: true
+                        withEnv(["NODE_OPTIONS=--max_old_space_size=2048"]) {
+                            sh 'echo Using Sonar Scanner at: $SONAR_SCANNER_HOME'
+                            sh """
+                                $SONAR_SCANNER_HOME/bin/sonar-scanner \
+                                    -Dsonar.projectKey=Solar-System-Project \
+                                    -Dsonar.sources=. \
+                                    -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
+                                    -Dsonar.ws.timeout=180 \
+                                    -Dsonar.verbose=true
+                            """
+                        }
                     }
                 }
+                waitForQualityGate abortPipeline: true
             }
         }
 
