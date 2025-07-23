@@ -1,7 +1,7 @@
 pipeline {
     agent any
     tools {
-        nodejs 'nodejs'  // Ensure 'nodejs' is configured in Jenkins
+        nodejs 'nodejs'  // Make sure NodeJS is configured in Jenkins global tools
     }
     environment {
         MONGO_URI = "mongodb+srv://supercluster.d83jj.mongodb.net/superData"
@@ -42,7 +42,7 @@ pipeline {
                     sh '''
                         echo "Using Mongo URI: $MONGO_URI"
                         echo "MongoDB Username: $MONGO_USER"
-                        echo "MongoDB Password: $MONGO_PASS"
+                        echo "MongoDB Password: ****"
                         npm test
                     '''
                 }
@@ -93,7 +93,7 @@ pipeline {
 
         stage('Docker Build Image') {
             steps {
-                sh 'sudo docker build -t shravya2315/solar-system:$GIT_COMMIT .'
+                sh 'docker build -t shravya2315/solar-system:$GIT_COMMIT .'
             }
         }
 
@@ -129,6 +129,5 @@ pipeline {
         }
     }
     */
-
 }
 
