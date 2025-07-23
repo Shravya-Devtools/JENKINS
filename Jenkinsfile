@@ -18,9 +18,8 @@ pipeline {
             parallel {
                 stage('NPM Dependency Audit') {
                     steps {
-                        sh '''
-                            npm audit --audit-level=critical || true
-                        '''
+                        // Use || true so audit doesn't fail the build on warnings
+                        sh 'npm audit --audit-level=critical || true'
                     }
                 }
                 stage('OWASP Dependency Check') {
@@ -61,7 +60,7 @@ pipeline {
         stage('SAST Sonarqube') {
             steps {
                 withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
-                    sh '''
+                    sh """
                         echo "Sonar Scanner Path: $SONAR_SCANNER_HOME"
                         $SONAR_SCANNER_HOME/bin/sonar-scanner \
                             -Dsonar.projectKey=Solar-System-Project \
@@ -69,7 +68,7 @@ pipeline {
                             -Dsonar.host.url=http://20.64.244.27:9000 \
                             -Dsonar.javascript.lcov.reportPaths=./coverage/lcov.info \
                             -Dsonar.login=$SONAR_TOKEN
-                    '''
+                    """
                 }
             }
         }
