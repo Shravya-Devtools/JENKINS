@@ -72,6 +72,7 @@ pipeline {
                 }
             }
         }
+        */
 
         stage('Trivy Security Scanner') {
             steps {
@@ -89,7 +90,6 @@ pipeline {
                 '''
             }
         }
-        */
 
         stage('Docker Build Image') {
             steps {
