@@ -30,6 +30,7 @@ pipeline {
                             --format 'ALL'
                             --prettyPrint
                         ''', odcInstallation: 'OWASP-depcheck-12'
+
                     }
                 }
             }
