@@ -11,7 +11,6 @@ pipeline {
     }
 
     stages {
-
         stage('Installing Dependencies') {
             options { timestamps() }
             steps {
@@ -46,7 +45,6 @@ pipeline {
         stage('Unit Test') {
             options { retry(2) }
             environment {
-                // Inject credentials into environment variables
                 MONGO_DB_CREDENTIALS = credentials('mongo-db-credentials')
                 MONGO_USERNAME = credentials('mongo-db-username')
                 MONGO_PASSWORD = credentials('mongo-db-password')
@@ -72,7 +70,6 @@ pipeline {
                 timeout(time: 5, unit: 'MINUTES') {
                     withSonarQubeEnv('sonar-qube-server') {
                         sh 'echo Using Sonar Scanner at: $SONAR_SCANNER_HOME'
-
                         sh """
                             $SONAR_SCANNER_HOME/bin/sonar-scanner \
                                 -Dsonar.projectKey=Solar-System-Project \
@@ -81,10 +78,10 @@ pipeline {
                                 -Dsonar.ws.timeout=180 \
                                 -Dsonar.verbose=true
                         """
+                        // ✅ Now inside timeout block
+                        waitForQualityGate abortPipeline: true
                     }
                 }
-
-                waitForQualityGate abortPipeline: true
             }
         }
 
@@ -98,10 +95,8 @@ pipeline {
 
     post {
         always {
-            // Always publish test results even if the build fails
             junit allowEmptyResults: true, testResults: 'test-results.xml'
 
-            // Publish code coverage report if available
             publishHTML([
                 allowMissing: true,
                 alwaysLinkToLastBuild: true,
