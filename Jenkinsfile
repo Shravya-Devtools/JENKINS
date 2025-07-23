@@ -1,11 +1,12 @@
 pipeline {
     agent any
     tools {
-        nodejs 'nodejs'
+        nodejs 'nodejs'  // Make sure 'nodejs' tool is configured in Jenkins
     }
     environment {
         MONGO_URI = "mongodb+srv://supercluster.d83jj.mongodb.net/superData"
-        SONAR_SCANNER_HOME = tool 'sonarqube-scanner610'
+        // Change 'sonarqube-scanner610' to the exact tool name configured in Jenkins
+        SONAR_SCANNER_HOME = tool 'sonar-scanner'  
     }
     stages {
         stage('Installing Dependencies') {
@@ -18,7 +19,6 @@ pipeline {
             parallel {
                 stage('NPM Dependency Audit') {
                     steps {
-                        // Use || true so audit doesn't fail the build on warnings
                         sh 'npm audit --audit-level=critical || true'
                     }
                 }
@@ -30,7 +30,6 @@ pipeline {
                             --format 'ALL'
                             --prettyPrint
                         ''', odcInstallation: 'OWASP-depcheck-12'
-
                     }
                 }
             }
@@ -108,19 +107,22 @@ pipeline {
             }
         }
     }
-	
+
     post {
         always {
-            publishHTML([
-                allowMissing: true,
-                alwaysLinkToLastBuild: true,
-                keepAll: true,
-                reportDir: 'coverage/lcov-report',
-                reportFiles: 'index.html',
-                reportName: 'Code Coverage HTML Report',
-                useWrapperFileDirectly: true
-            ])
-            junit allowEmptyResults: true, testResults: 'test-results.xml'
+            // Wrap publishHTML and junit inside node block for workspace access
+            node {
+                publishHTML([
+                    allowMissing: true,
+                    alwaysLinkToLastBuild: true,
+                    keepAll: true,
+                    reportDir: 'coverage/lcov-report',
+                    reportFiles: 'index.html',
+                    reportName: 'Code Coverage HTML Report',
+                    useWrapperFileDirectly: true
+                ])
+                junit allowEmptyResults: true, testResults: 'test-results.xml'
+            }
         }
     }
 }
