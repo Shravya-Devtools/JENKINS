@@ -37,7 +37,7 @@ pipeline {
         stage('Unit test') {
             options { retry(2) }
             steps {
-                withCredentials([usernamePassword(credentialsId: 'mongo-db-creds', usernameVariable: 'MONGO_USER', passwordVariable: 'MONGO_PASS')]) {
+                withCredentials([usernamePassword(credentialsId: 'mongo-db-credentials', usernameVariable: 'MONGO_USER', passwordVariable: 'MONGO_PASS')]) {
                     sh '''
                         echo "Using Mongo URI: $MONGO_URI"
                         echo "MongoDB Username: $MONGO_USER"
