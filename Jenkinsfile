@@ -1,11 +1,12 @@
 pipeline {
     agent any
     tools {
-        nodejs 'nodejs'  // Make sure NodeJS is configured in Jenkins global tools
+        nodejs 'nodejs'  // Make sure this is configured in Jenkins global tools
     }
     environment {
         MONGO_URI = "mongodb+srv://supercluster.d83jj.mongodb.net/superData"
         SONAR_SCANNER_HOME = tool 'sonar-scanner'
+        // GIT_COMMIT is a default Jenkins env variable for the current commit SHA
     }
     stages {
         /*
@@ -42,7 +43,7 @@ pipeline {
                     sh '''
                         echo "Using Mongo URI: $MONGO_URI"
                         echo "MongoDB Username: $MONGO_USER"
-                        echo "MongoDB Password: ****"
+                        echo "MongoDB Password: $MONGO_PASS"
                         npm test
                     '''
                 }
@@ -74,36 +75,37 @@ pipeline {
         }
         */
 
+        stage('Docker Build Image') {
+            steps {
+                sh "docker build -t shravya2315/solar-system:$GIT_COMMIT ."
+            }
+        }
+
         stage('Trivy Security Scanner') {
             steps {
-                sh '''
+                sh """
                     trivy image shravya2315/solar-system:$GIT_COMMIT \
                         --severity LOW,MEDIUM \
                         --exit-code 0 \
                         --quiet \
                         --format json -o trivy-image-MEDIUM-results.json
+
                     trivy image shravya2315/solar-system:$GIT_COMMIT \
                         --severity HIGH,CRITICAL \
                         --exit-code 1 \
                         --quiet \
                         --format json -o trivy-image-CRITICAL-results.json
-                '''
-            }
-        }
-
-        stage('Docker Build Image') {
-            steps {
-                sh 'docker build -t shravya2315/solar-system:$GIT_COMMIT .'
+                """
             }
         }
 
         stage('Push Docker Image') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                    sh '''
+                    sh """
                         echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
                         docker push shravya2315/solar-system:$GIT_COMMIT
-                    '''
+                    """
                 }
             }
         }
@@ -129,6 +131,5 @@ pipeline {
         }
     }
     */
-
 }
 
