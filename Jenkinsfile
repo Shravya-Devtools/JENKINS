@@ -13,6 +13,7 @@ pipeline {
 
     stages {
 
+        /*
         stage('Docker Build Image') {
             steps {
                 sh "docker build -t shravya2315/solar-system:$GIT_COMMIT ."
@@ -53,6 +54,7 @@ pipeline {
                 }
             }
         }
+        */
 
         stage('Deploy - AWS EC2') {
             when {
