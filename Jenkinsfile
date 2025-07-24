@@ -1,81 +1,17 @@
 pipeline {
     agent any
+
     tools {
-        nodejs 'nodejs'  // Make sure this is configured in Jenkins global tools
+        nodejs 'nodejs'  // Ensure Node.js is configured in Jenkins global tools
     }
+
     environment {
         MONGO_URI = "mongodb+srv://supercluster.d83jj.mongodb.net/superData"
         SONAR_SCANNER_HOME = tool 'sonar-scanner'
         // GIT_COMMIT is a default Jenkins env variable for the current commit SHA
     }
+
     stages {
-        /*
-        // Optional stages commented out - enable if needed
-
-        stage('Installing Dependencies') {
-            steps {
-                sh 'npm install --no-audit'
-            }
-        }
-
-        stage('Dependency Scanning') {
-            parallel {
-                stage('NPM Dependency Audit') {
-                    steps {
-                        sh 'npm audit --audit-level=critical || true'
-                    }
-                }
-                stage('OWASP Dependency Check') {
-                    steps {
-                        dependencyCheck additionalArguments: '''
-                            --scan './'
-                            --out './'
-                            --format 'ALL'
-                            --prettyPrint
-                        ''', odcInstallation: 'OWASP-depcheck-12'
-                    }
-                }
-            }
-        }
-
-        stage('Unit test') {
-            options { retry(2) }
-            steps {
-                withCredentials([usernamePassword(credentialsId: 'mongo-db-credentials', usernameVariable: 'MONGO_USER', passwordVariable: 'MONGO_PASS')]) {
-                    sh '''
-                        echo "Using Mongo URI: $MONGO_URI"
-                        echo "MongoDB Username: $MONGO_USER"
-                        echo "MongoDB Password: $MONGO_PASS"
-                        npm test
-                    '''
-                }
-            }
-        }
-
-        stage('Code Coverage') {
-            steps {
-                catchError(buildResult: 'SUCCESS', message: 'Coverage step failed, continuing', stageResult: 'UNSTABLE') {
-                    sh 'npm run coverage'
-                }
-            }
-        }
-
-        stage('SAST Sonarqube') {
-            steps {
-                withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
-                    sh """
-                        echo "Sonar Scanner Path: $SONAR_SCANNER_HOME"
-                        $SONAR_SCANNER_HOME/bin/sonar-scanner \
-                            -Dsonar.projectKey=Solar-System-Project \
-                            -Dsonar.sources=app.js \
-                            -Dsonar.host.url=http://20.64.244.27:9000 \
-                            -Dsonar.javascript.lcov.reportPaths=./coverage/lcov.info \
-                            -Dsonar.login=$SONAR_TOKEN
-                    """
-                }
-            }
-        }
-        */
 
         stage('Docker Build Image') {
             steps {
@@ -103,10 +39,41 @@ pipeline {
 
         stage('Push Docker Image') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'docker-hub-creds',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
+                    )
+                ]) {
                     sh """
                         echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
                         docker push shravya2315/solar-system:$GIT_COMMIT
+                    """
+                }
+            }
+        }
+
+        stage('Deploy - AWS EC2') {
+            when {
+                expression { return env.BRANCH_NAME ==~ /feature\/.*/ }
+            }
+            steps {
+                sshagent(['aws-dev-deploy-ec2-instance']) {
+                    sh """
+                        ssh -o StrictHostKeyChecking=no ubuntu@3.140.244.8 '
+                            if sudo docker ps -a | grep -q "solar-system"; then
+                                echo "Container found. Stopping..."
+                                sudo docker stop solar-system
+                                sudo docker rm solar-system
+                            fi
+                            echo "Starting new container..."
+                            sudo docker run --name solar-system \\
+                                -e MONGO_URI=$MONGO_URI \\
+                                -e MONGO_USERNAME=$MONGO_USERNAME \\
+                                -e MONGO_PASSWORD=$MONGO_PASSWORD \\
+                                -p 3000:3000 -d shravya2315/solar-system:$GIT_COMMIT
+                        '
                     """
                 }
             }
