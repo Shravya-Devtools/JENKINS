@@ -15,7 +15,7 @@ pipeline {
 
         stage('Docker Build Image') {
             steps {
-                sh "docker build -t shravya2315/solar-system:$GIT_COMMIT ."
+                sh 'docker build -t shravya2315/solar-system:$GIT_COMMIT .'
             }
         }
 
@@ -71,7 +71,7 @@ pipeline {
                             passwordVariable: 'MONGO_PASSWORD'
                         )
                     ]) {
-                        sh """
+                        sh '''
                             ssh -o StrictHostKeyChecking=no ubuntu@3.140.244.8 '
                                 if sudo docker ps -a | grep -q "solar-system"; then
                                     echo "Container found. Stopping..."
@@ -79,13 +79,13 @@ pipeline {
                                     sudo docker rm solar-system
                                 fi
                                 echo "Starting new container..."
-                                sudo docker run --name solar-system \\
-                                    -e MONGO_URI=$MONGO_URI \\
-                                    -e MONGO_USERNAME=$MONGO_USERNAME \\
-                                    -e MONGO_PASSWORD=$MONGO_PASSWORD \\
-                                    -p 3000:3000 -d shravya2315/solar-system:$GIT_COMMIT
+                                sudo docker run --name solar-system \
+                                    -e MONGO_URI=${MONGO_URI} \
+                                    -e MONGO_USERNAME=${MONGO_USERNAME} \
+                                    -e MONGO_PASSWORD=${MONGO_PASSWORD} \
+                                    -p 3000:3000 -d shravya2315/solar-system:${GIT_COMMIT}
                             '
-                        """
+                        '''
                     }
                 }
             }
