@@ -13,31 +13,35 @@ pipeline {
 
     stages {
 
+        // stage('Docker Build Image') {
+        //     steps {
+        //         sh "docker build -t shravya2315/solar-system:$GIT_COMMIT ."
+        //     }
+        // }
+
+        // stage('Trivy Security Scanner') {
+        //     steps {
+        //         sh """
+        //             trivy image shravya2315/solar-system:$GIT_COMMIT \
+        //                 --severity LOW,MEDIUM \
+        //                 --exit-code 0 \
+        //                 --quiet \
+        //                 --format json -o trivy-image-MEDIUM-results.json
+
+        //             trivy image shravya2315/solar-system:$GIT_COMMIT \
+        //                 --severity CRITICAL \
+        //                 --exit-code 0 \
+        //                 --quiet \
+        //                 --format json -o trivy-image-CRITICAL-results.json
+        //         """
+        //     }
+        // }
+
         stage('Docker Build Image') {
             steps {
                 sh "docker build -t shravya2315/solar-system:$GIT_COMMIT ."
             }
         }
-
-        /*
-        stage('Trivy Security Scanner') {
-            steps {
-                sh """
-                    trivy image shravya2315/solar-system:$GIT_COMMIT \
-                        --severity LOW,MEDIUM \
-                        --exit-code 0 \
-                        --quiet \
-                        --format json -o trivy-image-MEDIUM-results.json
-
-                    trivy image shravya2315/solar-system:$GIT_COMMIT \
-                        --severity CRITICAL \
-                        --exit-code 0 \
-                        --quiet \
-                        --format json -o trivy-image-CRITICAL-results.json
-                """
-            }
-        }
-        */
 
         stage('Push Docker Image') {
             steps {
@@ -62,21 +66,29 @@ pipeline {
             }
             steps {
                 sshagent(['aws-dev-deploy-ec2-instance']) {
-                    sh """
-                        ssh -o StrictHostKeyChecking=no ubuntu@3.140.244.8 '
-                            if sudo docker ps -a | grep -q "solar-system"; then
-                                echo "Container found. Stopping..."
-                                sudo docker stop solar-system
-                                sudo docker rm solar-system
-                            fi
-                            echo "Starting new container..."
-                            sudo docker run --name solar-system \\
-                                -e MONGO_URI=$MONGO_URI \\
-                                -e MONGO_USERNAME=$MONGO_USERNAME \\
-                                -e MONGO_PASSWORD=$MONGO_PASSWORD \\
-                                -p 3000:3000 -d shravya2315/solar-system:$GIT_COMMIT
-                        '
-                    """
+                    withCredentials([
+                        usernamePassword(
+                            credentialsId: 'mongo-db-credentials',  // <-- use your existing mongo creds here
+                            usernameVariable: 'MONGO_USERNAME',
+                            passwordVariable: 'MONGO_PASSWORD'
+                        )
+                    ]) {
+                        sh """
+                            ssh -o StrictHostKeyChecking=no ubuntu@3.140.244.8 '
+                                if sudo docker ps -a | grep -q "solar-system"; then
+                                    echo "Container found. Stopping..."
+                                    sudo docker stop solar-system
+                                    sudo docker rm solar-system
+                                fi
+                                echo "Starting new container..."
+                                sudo docker run --name solar-system \\
+                                    -e MONGO_URI=$MONGO_URI \\
+                                    -e MONGO_USERNAME=$MONGO_USERNAME \\
+                                    -e MONGO_PASSWORD=$MONGO_PASSWORD \\
+                                    -p 3000:3000 -d shravya2315/solar-system:$GIT_COMMIT
+                            '
+                        """
+                    }
                 }
             }
         }
