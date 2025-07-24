@@ -13,13 +13,13 @@ pipeline {
 
     stages {
 
-        /*
         stage('Docker Build Image') {
             steps {
                 sh "docker build -t shravya2315/solar-system:$GIT_COMMIT ."
             }
         }
 
+        /*
         stage('Trivy Security Scanner') {
             steps {
                 sh """
@@ -37,6 +37,7 @@ pipeline {
                 """
             }
         }
+        */
 
         stage('Push Docker Image') {
             steps {
@@ -54,7 +55,6 @@ pipeline {
                 }
             }
         }
-        */
 
         stage('Deploy - AWS EC2') {
             when {
