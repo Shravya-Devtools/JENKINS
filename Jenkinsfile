@@ -13,12 +13,13 @@ pipeline {
 
     stages {
 
-        // stage('Docker Build Image') {
-        //     steps {
-        //         sh "docker build -t shravya2315/solar-system:$GIT_COMMIT ."
-        //     }
-        // }
+        stage('Docker Build Image') {
+            steps {
+                sh "docker build -t shravya2315/solar-system:$GIT_COMMIT ."
+            }
+        }
 
+        /*
         // stage('Trivy Security Scanner') {
         //     steps {
         //         sh """
@@ -36,13 +37,9 @@ pipeline {
         //         """
         //     }
         // }
+        */
 
-        stage('Docker Build Image') {
-            steps {
-                sh "docker build -t shravya2315/solar-system:$GIT_COMMIT ."
-            }
-        }
-
+        /*
         stage('Push Docker Image') {
             steps {
                 withCredentials([
@@ -59,6 +56,7 @@ pipeline {
                 }
             }
         }
+        */
 
         stage('Deploy - AWS EC2') {
             when {
@@ -68,7 +66,7 @@ pipeline {
                 sshagent(['aws-dev-deploy-ec2-instance']) {
                     withCredentials([
                         usernamePassword(
-                            credentialsId: 'mongo-db-credentials',  // <-- use your existing mongo creds here
+                            credentialsId: 'mongo-db-credentials',
                             usernameVariable: 'MONGO_USERNAME',
                             passwordVariable: 'MONGO_PASSWORD'
                         )
